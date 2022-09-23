@@ -22,6 +22,8 @@ export CUDA_VISIBLE_DEVICES=0,1,2,3
 
 for tool in $(find ${TESTS_DIR} -type f -executable -name "osu_alltoall*" | sort); do
 
+    echo ${tool} && ldd ${tool}
+
     echo && echo && echo "********* Inter-Node-CPU *****************"
     echo ${tool} && mpiexec -n 8 --ppn 4 ./get_local_rank ${tool}
 

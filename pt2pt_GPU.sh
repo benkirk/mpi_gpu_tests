@@ -22,6 +22,8 @@ export CUDA_VISIBLE_DEVICES=0,1,2,3
 
 for tool in $(find ${TESTS_DIR} -type f -executable -name "osu_*bw" -o -name osu_latency | sort); do
 
+    echo ${tool} && ldd ${tool}
+
     echo && echo && echo "********* Intra-Node-CPU *****************"
     echo ${tool} && mpiexec -n 2 --ppn 2 ./get_local_rank ${tool}
 
