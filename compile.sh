@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
+#PBS -q main
+#PBS -A SCSG0001
+#PBS -j oe
+#PBS -l walltime=01:00:00
+#PBS -l select=1:ncpus=60:mpiprocs=1:ompthreads=60:ngpus=2
 
 # Handle arguments
 user_args=( "$@" )
@@ -31,7 +36,6 @@ EOF
 # build using ncarenv
 if [[ ${ncar_stack} == "yes" ]]; then
     cat >>config_env.sh <<EOF
-[ -d ./modules ] && module use ./modules
 module reset
 module load gcc/11.2.0 cuda
 module list
@@ -44,14 +48,14 @@ EOF
 # build using crayenv
 else
     cat >>config_env.sh <<EOF
-[ -d ./modules ] && module use ./modules
+#[ -d ./modules ] && module use ./modules
 module purge
 module load crayenv
-module load PrgEnv-gnu/8.3.2 craype-x86-rome craype-accel-nvidia80 libfabric cray-pals cuda
+module load PrgEnv-gnu/8.3.2 craype-x86-rome craype-accel-nvidia80 libfabric cray-pals cpe-cuda
 module list
-export CPPFLAGS="-I\${NCAR_ROOT_CUDA}/include"
-export LDFLAGS="-L\${NCAR_ROOT_CUDA}/lib64 -lcudart -Wl,-rpath,\${NCAR_ROOT_CUDA}/lib64"
-export NVCCFLAGS="-allow-unsupported-compiler"
+#export CPPFLAGS="-I\${NCAR_ROOT_CUDA}/include"
+#export LDFLAGS="-L\${NCAR_ROOT_CUDA}/lib64 -lcudart -Wl,-rpath,\${NCAR_ROOT_CUDA}/lib64"
+#export NVCCFLAGS="-allow-unsupported-compiler"
 for tool in CC cc ftn gcc mpiexec; do
     which \${tool}
 done

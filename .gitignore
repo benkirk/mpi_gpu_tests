@@ -1,0 +1,7 @@
+*.sh.o*
+config_env.sh
+install/
+modules/
+osu-micro-benchmarks-*.tar.gz
+osu-micro-benchmarks-*/
+*~

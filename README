@@ -1,6 +1,7 @@
 
 # build with crayenv:
-./compile.sh
+# needs to be on a GPU node to find full Cray / NVidia development environment
+qsub ./compile.sh
 
 # or build with ncarenv:
 ./compile.sh --ncar-stack
