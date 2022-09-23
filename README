@@ -1,0 +1,12 @@
+
+# build with crayenv:
+./compile.sh
+
+# or build with ncarenv:
+./compile.sh --ncar-stack
+
+# run pt2pt tests:
+qsub -q main -A SCSG0001 pt2pt_GPU.sh
+
+# run collective tests:
+qsub -q main -A SCSG0001 collective_GPU.sh

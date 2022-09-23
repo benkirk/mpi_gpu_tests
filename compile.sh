@@ -49,9 +49,9 @@ module purge
 module load crayenv
 module load PrgEnv-gnu/8.3.2 craype-x86-rome craype-accel-nvidia80 libfabric cray-pals cuda
 module list
-export CPPFLAGS="-I${NCAR_ROOT_CUDA}/include" \
-export LDFLAGS="-L${NCAR_ROOT_CUDA}/lib64 -lcudart -Wl,-rpath,${NCAR_ROOT_CUDA}/lib64" \
-export NVCCFLAGS="-allow-unsupported-compiler" \
+export CPPFLAGS="-I\${NCAR_ROOT_CUDA}/include"
+export LDFLAGS="-L\${NCAR_ROOT_CUDA}/lib64 -lcudart -Wl,-rpath,\${NCAR_ROOT_CUDA}/lib64"
+export NVCCFLAGS="-allow-unsupported-compiler"
 for tool in CC cc ftn gcc mpiexec; do
     which \${tool}
 done
