@@ -38,6 +38,7 @@ module list
 for tool in CC cc ftn gcc mpiexec; do
     which \${tool}
 done
+export BUILD_CLASS="ncarenv / $(which CC)"
 EOF
 
 # build using crayenv
@@ -54,6 +55,7 @@ export NVCCFLAGS="-allow-unsupported-compiler" \
 for tool in CC cc ftn gcc mpiexec; do
     which \${tool}
 done
+export BUILD_CLASS="crayenv / $(which CC)"
 EOF
 fi
 
