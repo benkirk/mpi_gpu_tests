@@ -23,28 +23,26 @@ while [[ $# -gt 0 ]]; do
     shift
 done
 
+cat >config_env.sh <<EOF
+top_dir=$(pwd)
+EOF
+
 # build using ncarenv
 if [[ ${ncar_stack} == "yes" ]]; then
-    cat >config_env.sh <<EOF
+    cat >>config_env.sh <<EOF
 module reset
 module load gcc/11.2.0 cuda
 module list
-for tool in CC cc ftn gcc mpiexec; do
-    which \${tool}
-done
 export BUILD_CLASS="ncarenv" && echo "CC: \$(which CC)"
 EOF
 
 # build using crayenv
 else
-    cat >config_env.sh <<EOF
+    cat >>config_env.sh <<EOF
 module purge
 module load crayenv
 module load PrgEnv-gnu/8.3.2 craype-x86-rome craype-accel-nvidia80 libfabric cray-pals cpe-cuda
 module list
-for tool in CC cc ftn gcc mpiexec; do
-    which \${tool}
-done
 export BUILD_CLASS="crayenv" && echo "CC: \$(which CC)"
 EOF
 fi
@@ -53,10 +51,12 @@ cat >>config_env.sh  <<EOF
 package="osu-micro-benchmarks"
 version="6.1"
 src_dir=\${package}-\${version}
-tarball=\${src_dir}.tar.gz
+tarball=\${package}-\${version}.tar.gz
 inst_dir=$(pwd)/install-\${BUILD_CLASS}
+for tool in CC cc ftn gcc mpiexec; do
+    which \${tool}
+done
 EOF
-
 
 . config_env.sh || exit 1
 
@@ -72,7 +72,7 @@ CXX=$(which CC) CC=$(which cc) FC=$(which ftn) F77=${FC} \
     || exit 1
 
 make -j 8 || exit 1
-rm -rf ${inst_dir} && make install || exit 1
+rm -rf ${inst_dir} && make install && cp config.log ${inst_dir} && cp ${inst_dir}/../config_env.sh ${inst_dir} || exit 1
 
 
 echo && echo && echo "Done at $(date)"
