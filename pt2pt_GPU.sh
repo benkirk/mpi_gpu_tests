@@ -20,7 +20,7 @@ TESTS_DIR=${inst_dir}
 export MPICH_GPU_SUPPORT_ENABLED=1
 export CUDA_VISIBLE_DEVICES=0,1,2,3
 
-for tool in $(find ${TESTS_DIR} -type f -executable -name "osu_*bw" -o -name osu_latency | sort); do
+for tool in $(find ${TESTS_DIR} -type f -executable -name osu_bw -o -name osu_bibw -o -name osu_latency | sort); do
 
     echo ${tool} && ldd ${tool}
 
