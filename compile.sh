@@ -56,6 +56,13 @@ inst_dir=$(pwd)/install-\${BUILD_CLASS}
 for tool in CC cc ftn gcc mpiexec; do
     which \${tool}
 done
+
+# Enable verbose MPI settings
+export MPICH_ENV_DISPLAY=1
+
+# Enable GPU support in the MPI library
+export MPICH_GPU_SUPPORT_ENABLED=1
+export MPICH_GPU_MANAGED_MEMORY_SUPPORT_ENABLED=1
 EOF
 
 . config_env.sh || exit 1
@@ -72,7 +79,11 @@ CXX=$(which CC) CC=$(which cc) FC=$(which ftn) F77=${FC} \
     || exit 1
 
 make -j 8 || exit 1
-rm -rf ${inst_dir} && make install && cp config.log ${inst_dir} && cp ${inst_dir}/../config_env.sh ${inst_dir} || exit 1
+rm -rf ${inst_dir} && make install \
+    && cp config.log ${inst_dir} \
+    && cp ${top_dir}/config_env.sh ${inst_dir} \
+    && ln -sf ${top_dir}/get_local_rank ${top_dir}/*_GPU.sh ${inst_dir} \
+        || exit 1
 
 
 echo && echo && echo "Done at $(date)"

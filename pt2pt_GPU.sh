@@ -9,11 +9,10 @@
 
 . config_env.sh || exit 1
 
-# Enable GPU support in the MPI library
-export MPICH_GPU_SUPPORT_ENABLED=1
-export CUDA_VISIBLE_DEVICES=0,1,2,3
-#export LD_PRELOAD=/usr/lib64/libvma.so.9.1.2
-#export LD_PRELOAD=/opt/nvidia/hpc_sdk/Linux_x86_64/22.3/cuda/11.6/lib64/libcudart.so.11.0
+module purge
+module load crayenv
+module load PrgEnv-gnu/8.3.2 craype-x86-rome craype-accel-nvidia80 libfabric cray-pals cpe-cuda
+module list
 
 ### Interrogate Environment
 env | sort | uniq | egrep -v "_LM|_ModuleTable"
