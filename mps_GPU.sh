@@ -1,19 +1,14 @@
 #!/bin/bash
-#PBS -A <project_code>
+#PBS -A SCSG0001
 #PBS -j oe
+#PBS -q main
 #PBS -l walltime=00:30:00
-#PBS -l select=2:ncpus=32:mpiprocs=32:ompthreads=1:ngpus=4
+#PBS -l select=1:ncpus=32:mpiprocs=32:ompthreads=1:ngpus=4
 
 ### Set temp to scratch
 [ -d /glade/gust/scratch/${USER} ] && export TMPDIR=/glade/gust/scratch/${USER}/tmp && mkdir -p $TMPDIR
 
 . config_env.sh || exit 1
-
-# force a specific runtime environment
-# module purge
-# module load crayenv
-# module load PrgEnv-gnu/8.3.2 craype-x86-rome craype-accel-nvidia80 libfabric cray-pals cpe-cuda
-# module list
 
 ### Interrogate Environment
 env | sort | uniq | egrep -v "_LM|_ModuleTable|Modules|lmod_sh"
@@ -24,7 +19,14 @@ TESTS_DIR=${inst_dir}
 
 ps auxww | grep "nvidia-cuda-mps-control"
 nvidia-smi -a > "nvidia-smi_a-${PBS_JOBID}.txt"
+nvidia-smi --query | grep 'Compute Mode'
 nvidia-smi
+
+
+strace /glade/u/home/benkirk/mpi_gpu_tests/install-ncarenv/libexec/osu-micro-benchmarks/mpi/collective/osu_alltoallv >/dev/null 2>&1
+
+
+exit 0
 
 status="SUCCESS"
 

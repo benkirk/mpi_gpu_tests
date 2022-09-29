@@ -22,10 +22,10 @@
 
 export LOCAL_RANK=${PMI_LOCAL_RANK}
 export GLOBAL_RANK=${PMI_RANK}
-my_CUDA_DEVICE=$(expr ${LOCAL_RANK} % 4)
+export my_CUDA_DEVICE=$(expr ${LOCAL_RANK} % 4)
 export CUDA_VISIBLE_DEVICES=${my_CUDA_DEVICE}
 
-echo "Global Rank ${GLOBAL_RANK} / Local Rank ${LOCAL_RANK} / CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES} / $(hostname)"
+printf "Global Rank %3d / Local Rank %3d / CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES} / $(hostname)\n" ${GLOBAL_RANK} ${LOCAL_RANK}
 
 debug_env=yes
 
