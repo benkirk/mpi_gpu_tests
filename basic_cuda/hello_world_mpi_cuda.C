@@ -4,7 +4,6 @@
 #include <cstdio>
 #include <vector>
 #include <unistd.h>
-#include <omp.h>
 #include "mpi.h"
 #include "cuda.h"
 #include "cuda_runtime.h"
@@ -29,6 +28,23 @@ int CUDA_CHECK(cudaError_t stmt)
 }
 
 
+// https://www.open-mpi.org/faq/?category=runcuda
+void select_cuda_device()
+{
+  int rank=0, local_rank = -1;
+  {
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm local_comm;
+    MPI_Comm_split_type(MPI_COMM_WORLD, MPI_COMM_TYPE_SHARED, rank, MPI_INFO_NULL, &local_comm);
+    MPI_Comm_rank(local_comm, &local_rank);
+    MPI_Comm_free(&local_comm);
+  }
+  int num_devices = 0;
+  cudaGetDeviceCount(&num_devices);
+  cudaSetDevice(local_rank % num_devices);
+}
+
+
 
 int* allocate(const std::size_t size, const MemType mem_type)
 {
@@ -42,7 +58,10 @@ int* allocate(const std::size_t size, const MemType mem_type)
       std::cout << "Successfully allocated "
 		<< size*sizeof(int)
 		<< " bytes of CPU memory\n";
-      break;
+      for (int i=0; i<size; ++i)
+        buffer[i] = i, std::cout << buffer[i] << " ";
+      std::cout << "\n";
+      return buffer;
 
     case GPU_Device:
       CUDA_CHECK(cudaMalloc((void**) &buffer, size*sizeof(int)));
@@ -58,21 +77,16 @@ int* allocate(const std::size_t size, const MemType mem_type)
       std::cout << "Successfully allocated "
 		<< size*sizeof(int)
 		<< " bytes of managed GPU memory\n";
-      break;
+      fillprintCUDAbuf_wrap (buffer, size);
+      return buffer;
 
     default:
       assert (false);
       break;
     }
 
-  for (int i=0; i<size; ++i)
-    {
-      buffer[i] = i;
-      std::cout << buffer[i] << " ";
-    }
-  std::cout << std::endl;
 
-  return buffer;
+  return NULL;
 }
 
 
@@ -107,7 +121,7 @@ int deallocate (int *buffer, const MemType mem_type)
 
 int main (int argc, char **argv)
 {
-  int numprocs, rank, nthreads=1, opt;
+  int numprocs, rank, opt;
   const std::size_t bufsize = 10;
   int *sbuf = NULL;
   int *rbuf = NULL;
@@ -131,9 +145,6 @@ int main (int argc, char **argv)
         }
     }
 
-#pragma omp parallel
-  { if (0 == omp_get_thread_num()) nthreads = omp_get_num_threads(); }
-
   MPI_Init(&argc, &argv);
   MPI_Comm_size (MPI_COMM_WORLD, &numprocs);
   MPI_Comm_rank (MPI_COMM_WORLD, &rank);
@@ -147,22 +158,20 @@ int main (int argc, char **argv)
   std::cout << "Hello from " << std::setw(3) << rank
 	    << ", running " << argv[0] << " on "
 	    << std::setw(3) << numprocs << " rank(s)"
-	    << " with " << nthreads << " threads"
 	    << std::endl;
 
+
+  select_cuda_device();
 
   //--------------------
   sbuf = allocate(bufsize, mem_type);
   rbuf = allocate(bufsize, mem_type);
 
-  MPI_Barrier(MPI_COMM_WORLD);
   if (0 == rank)
-      MPI_Send (&sbuf[0], 1, MPI_INT, /* dest = */ 1, /* tag = */ 100, MPI_COMM_WORLD);
+      MPI_Send (sbuf, bufsize, MPI_INT, /* dest = */ 1, /* tag = */ 100, MPI_COMM_WORLD);
 
   else
-    MPI_Recv (&rbuf[0], 1, MPI_INT, /* src = */ 0, /* tag = */ 100, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-
-  MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Recv (rbuf, bufsize, MPI_INT, /* src = */ 0, /* tag = */ 100, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
   deallocate(sbuf, mem_type);
   deallocate(rbuf, mem_type);

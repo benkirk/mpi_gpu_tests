@@ -1,0 +1,6 @@
+Cray CC + Cray-Mpich:
+./run_cray_mpich.sh
+
+
+Cray CC + OpenMPI:
+./run_openmpi.sh

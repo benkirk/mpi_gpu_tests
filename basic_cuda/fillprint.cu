@@ -20,4 +20,5 @@ __global__ void fillprintCUDAbuf(int* buf, size_t size)
 void fillprintCUDAbuf_wrap(int* buf, size_t size)
 {
   fillprintCUDAbuf<<<1, 1>>>(buf, size);
+  cudaDeviceSynchronize();
 }
