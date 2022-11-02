@@ -26,17 +26,17 @@ for tool in $(find ${TESTS_DIR} -type f -executable -name "osu_alltoall*" | sort
     echo ${tool} && ldd ${tool}
 
     echo && echo && echo "********* Intra-Node-CPU *****************"
-    echo ${tool} && mpiexec -n 4 --ppn 4 ./get_local_rank ${tool}
+    echo ${tool} && mpiexec -n 4 --ppn 4 $(which get_local_rank) ${tool}
 
     echo && echo && echo "********* Inter-Node-CPU *****************"
-    echo ${tool} && mpiexec -n 8 --ppn 4 ./get_local_rank ${tool}
+    echo ${tool} && mpiexec -n 8 --ppn 4 $(which get_local_rank) ${tool}
 
     echo && echo && echo "********* Intra-Node-GPU *****************"
-    echo ${tool} && mpiexec -n 4 --ppn 4 ./get_local_rank ${tool} -d managed
+    echo ${tool} && mpiexec -n 4 --ppn 4 $(which get_local_rank) ${tool} -d managed
 
     # this should be the problem config
     echo && echo && echo "********* Inter-Node-GPU *****************"
-    echo ${tool} && mpiexec -n 8 --ppn 4 ./get_local_rank ${tool} -d managed
+    echo ${tool} && mpiexec -n 8 --ppn 4 $(which get_local_rank) ${tool} -d managed
 done
 
 echo "Done at $(date)"

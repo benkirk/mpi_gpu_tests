@@ -31,7 +31,7 @@ EOF
 if [[ ${ncar_stack} == "yes" ]]; then
     cat >>config_env.sh <<EOF
 module reset
-module load gcc/11.2.0 cuda
+module load gcc/11.2.0 openmpi cuda
 module list
 export BUILD_CLASS="ncarenv" && echo "CC: \$(which CC)"
 EOF
@@ -74,7 +74,7 @@ env | sort | uniq | egrep -v "_LM|_ModuleTable"
 
 cd ${src_dir} && rm -rf BUILD && mkdir BUILD && cd BUILD || exit 1
 
-CXX=$(which CC) CC=$(which cc) FC=$(which ftn) F77=${FC} \
+CXX=$(which mpicxx) CC=$(which mpicc) FC=$(which mpif90) F77=${FC} \
    ../configure --enable-cuda --prefix=${inst_dir} \
     || exit 1
 
@@ -82,7 +82,7 @@ make -j 8 || exit 1
 rm -rf ${inst_dir} && make install \
     && cp config.log ${inst_dir} \
     && cp ${top_dir}/config_env.sh ${inst_dir} \
-    && ln -sf ${top_dir}/get_local_rank ${top_dir}/*_GPU.sh ${inst_dir} \
+    && ln -sf $(which get_local_rank) ${top_dir}/*_GPU.sh ${inst_dir} \
         || exit 1
 
 

@@ -26,17 +26,17 @@ for tool in $(find ${TESTS_DIR} -type f -executable -name osu_bw -o -name osu_bi
     echo ${tool} && ldd ${tool}
 
     echo && echo && echo "********* Intra-Node-CPU *****************"
-    echo ${tool} && mpiexec -n 2 --ppn 2 ./get_local_rank ${tool}
+    echo ${tool} && mpiexec -n 2 --ppn 2 $(which get_local_rank) ${tool}
 
     echo && echo && echo "********* Inter-Node-CPU *****************"
-    echo ${tool} && mpiexec -n 2 --ppn 1 ./get_local_rank ${tool}
+    echo ${tool} && mpiexec -n 2 --ppn 1 $(which get_local_rank) ${tool}
 
     echo && echo && echo "********* Intra-Node-GPU *****************"
-    echo ${tool} && mpiexec -n 2 --ppn 2 ./get_local_rank ${tool} D D
+    echo ${tool} && mpiexec -n 2 --ppn 2 $(which get_local_rank) ${tool} D D
 
     # this should be the problem config
     echo && echo && echo "********* Inter-Node-GPU *****************"
-    echo ${tool} && mpiexec -n 2 --ppn 1 ./get_local_rank ${tool} D D
+    echo ${tool} && mpiexec -n 2 --ppn 1 $(which get_local_rank) ${tool} D D
 done
 
 echo "Done at $(date)"
