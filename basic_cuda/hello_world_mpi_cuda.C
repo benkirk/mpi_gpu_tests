@@ -65,7 +65,6 @@ int* allocate(const std::size_t size, const MemType mem_type)
 
     case GPU_Device:
       CUDA_CHECK(cudaMalloc((void**) &buffer, size*sizeof(int)));
-      CUDA_CHECK(cudaMemset(buffer, 0, size*sizeof(int)));
       std::cout << "Successfully allocated "
 		<< size*sizeof(int)
 		<< " bytes of GPU memory\n";

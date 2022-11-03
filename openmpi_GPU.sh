@@ -2,7 +2,7 @@
 #PBS -A <project_code>
 #PBS -j oe
 #PBS -l walltime=00:30:00
-#PBS -l select=2:ncpus=32:mpiprocs=32:ompthreads=1:ngpus=4
+#PBS -l select=2:ncpus=64:mpiprocs=32:ompthreads=1:ngpus=4
 
 ### Set temp to scratch
 [ -d /glade/gust/scratch/${USER} ] && export TMPDIR=/glade/gust/scratch/${USER}/tmp && mkdir -p $TMPDIR
@@ -68,10 +68,10 @@ for tool in $(find ${TESTS_DIR} -type f -executable -name "osu_alltoall*" | sort
     echo ${tool} && mpiexec -n 8 -npernode 4 $(which get_local_rank) ${tool} -d managed || status="FAIL"
 
     echo && echo && echo "********* Intra-Node-GPU (nranks == 4*ngpus) *****************"
-    echo ${tool} && mpiexec -n 32 -npernode 32 $(which get_local_rank) ${tool} -d managed || status="FAIL"
+    echo ${tool} && mpiexec -n 16 -npernode 16 $(which get_local_rank) ${tool} -d managed || status="FAIL"
 
     echo && echo && echo "********* Inter-Node-GPU (nranks == 4*ngpus) *****************"
-    echo ${tool} && mpiexec -n 64 -npernode 32 $(which get_local_rank) ${tool} -d managed || status="FAIL"
+    echo ${tool} && mpiexec -n 32 -npernode 16 $(which get_local_rank) ${tool} -d managed || status="FAIL"
 done
 
 echo && echo && echo

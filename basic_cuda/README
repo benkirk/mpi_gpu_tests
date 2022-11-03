@@ -1,6 +1,8 @@
-Cray CC + Cray-Mpich:
+# qsub -I -q main -l select=1:ncpus=4:mpiprocs=2:ompthreads=2:ngpus=2 -l walltime=00:30:00 -A SCSG0001
+
+# Cray CC + Cray-Mpich:
 ./run_cray_mpich.sh
 
 
-Cray CC + OpenMPI:
+# Cray CC + OpenMPI:
 ./run_openmpi.sh
