@@ -7,6 +7,7 @@ module list
 # Enable GPU support in the MPI library
 export MPICH_GPU_SUPPORT_ENABLED=1
 export MPICH_GPU_MANAGED_MEMORY_SUPPORT_ENABLED=1
+export MPI_ARGS="--ppn 2"
 
 # default compiler
 make --no-print-directory clean

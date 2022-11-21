@@ -15,22 +15,6 @@ enum MemType { CPU=0, GPU_Device, GPU_Managed };
 
 
 
-#ifdef HAVE_CUDA
-int CUDA_CHECK(cudaError_t stmt)
-{
-  int err_n = static_cast<int>(stmt);
-  if (0 != err_n) {
-    fprintf(stderr, "[%s:%d] CUDA call '%d' failed with %d: %s \n",
-            __FILE__, __LINE__, stmt, err_n, cudaGetErrorString(stmt));
-    exit(EXIT_FAILURE);
-  }
-  assert(cudaSuccess == err_n);
-
-  return 0;
-}
-#endif // #ifdef HAVE_CUDA
-
-
 // https://www.open-mpi.org/faq/?category=runcuda
 void select_cuda_device()
 {
@@ -186,7 +170,7 @@ int main (int argc, char **argv)
   //--------------------
   buf = allocate(bufsize, mem_type);
 
-  if (rank%2) // even ranks send...
+  if (rank%2 == 0) // even ranks send...
     MPI_Send (buf, bufsize, MPI_INT, /* dest = */ (rank + 1) % nranks, /* tag = */ 100, MPI_COMM_WORLD);
 
   else // odd ranks recv

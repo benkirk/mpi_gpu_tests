@@ -1,1 +1,7 @@
 *.o
+core
+hello_world_mpi_cpu
+hello_world_mpi_cuda
+run_openmpi.out
+run_openmpi_dbg.out
+run_openmpi_dbg.sh
