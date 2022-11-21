@@ -41,7 +41,7 @@ else
     cat >>config_env.sh <<EOF
 module purge
 module load crayenv
-module load PrgEnv-gnu/8.3.2 craype-x86-rome craype-accel-nvidia80 libfabric cray-pals cpe-cuda
+module load PrgEnv-gnu/8.3.3 craype-x86-milan craype-accel-nvidia80 libfabric cray-pals cpe-cuda
 module list
 export BUILD_CLASS="crayenv" && echo "CC: \$(which CC)"
 EOF
