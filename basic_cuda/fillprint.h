@@ -8,7 +8,7 @@
 extern "C" {
 #endif
 
-  void fillprintCUDAbuf_wrap(int* buf, size_t);
+  void fillprintCUDAbuf (int* buf, size_t);
 
 #ifdef __cplusplus
 }

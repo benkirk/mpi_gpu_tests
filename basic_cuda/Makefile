@@ -1,8 +1,15 @@
+all: hello_world_mpi_cpu hello_world_mpi_cuda
+
 hello_world_mpi_cuda: hello_world_mpi_cuda.o fillprint.o
 	mpicxx -g -o hello_world_mpi_cuda hello_world_mpi_cuda.o fillprint.o -lcuda -lcudart
 
 hello_world_mpi_cuda.o: hello_world_mpi_cuda.C
-	mpicxx -g -c hello_world_mpi_cuda.C
+	mpicxx -g -c -DHAVE_CUDA hello_world_mpi_cuda.C
+
+# no-CUDA variant
+hello_world_mpi_cpu: hello_world_mpi_cuda.C
+	mpicxx -g -o hello_world_mpi_cpu hello_world_mpi_cuda.C
+
 
 fillprint.o: fillprint.cu
 	nvcc -c fillprint.cu
