@@ -114,10 +114,30 @@ int deallocate (int *buffer, const MemType mem_type)
 
 
 
-int* copy_dev_buf_to_host (const std::size_t size, int *dev, int *host)
+int* copy_dev_to_host (const std::size_t size, int *dev, int *host)
 {
   // TODO
+#ifdef HAVE_CUDA
+  CUDA_CHECK(cudaMemcpy(host, dev, sizeof(int)*size, cudaMemcpyDeviceToHost));
+#else
+  assert(false);
+#endif
+
   return host;
+}
+
+
+
+int* copy_host_to_dev (const std::size_t size, int *host, int *dev)
+{
+  // TODO
+#ifdef HAVE_CUDA
+  CUDA_CHECK(cudaMemcpy(dev, host, sizeof(int)*size, cudaMemcpyHostToDevice));
+#else
+  assert(false);
+#endif
+
+  return dev;
 }
 
 
