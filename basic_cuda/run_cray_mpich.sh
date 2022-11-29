@@ -9,6 +9,12 @@ module reset >/dev/null 2>&1
 module load cuda >/dev/null 2>&1
 module list
 
+# Enable verbose MPI settings
+export MPICH_ENV_DISPLAY=1
+
+# Enable verbose output during MPI_Init to verify which libfabric provider has been selected
+export MPICH_OFI_VERBOSE=1
+
 # Enable GPU support in the MPI library
 export MPICH_GPU_SUPPORT_ENABLED=1
 export MPICH_GPU_MANAGED_MEMORY_SUPPORT_ENABLED=1
