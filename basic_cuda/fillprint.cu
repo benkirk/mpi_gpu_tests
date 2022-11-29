@@ -29,7 +29,7 @@ __global__ void printCUDAbuf(int* buf, size_t size)
 void fillprintCUDAbuf(int* buf, size_t size)
 {
   fillCUDAbuf<<<1,  1>>>(buf, size);
-  printCUDAbuf<<<1, 1>>>(buf, size);
+  /* printCUDAbuf<<<1, 1>>>(buf, size); */
 
   cudaDeviceSynchronize();
 }

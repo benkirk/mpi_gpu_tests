@@ -10,26 +10,50 @@ hello_world_mpi_cuda.o: hello_world_mpi.C
 hello_world_mpi_cpu: hello_world_mpi.C
 	mpicxx -g -o hello_world_mpi_cpu hello_world_mpi.C
 
-
 fillprint.o: fillprint.cu
 	nvcc -c fillprint.cu
 
 run_CPU: hello_world_mpi_cpu
+	@echo "------------------"
 	@echo "CPU Memory:"
-	@mpiexec -n 2 $(MPI_ARGS) ./hello_world_mpi_cpu && echo "Success" || echo "Failed"
+	@echo "------------------"
+	mpiexec -n 2 $(MPI_ARGS) ./hello_world_mpi_cpu && echo "Success" || echo "Failed"
+	@echo && echo && echo
 
 run_GPUm: hello_world_mpi_cuda
+	@echo "------------------"
 	@echo "GPU Managed Memory:"
-	@mpiexec -n 2 $(MPI_ARGS) ./hello_world_mpi_cuda -m && echo "Success" || echo "Failed"
+	@echo "------------------"
+	MPICH_GPU_SUPPORT_ENABLED=1 MPICH_GPU_MANAGED_MEMORY_SUPPORT_ENABLED=1 mpiexec -n 2 $(MPI_ARGS) ./hello_world_mpi_cuda -m && echo "Success" || echo "Failed"
+	@echo && echo && echo
+
+run_GPUmc: hello_world_mpi_cuda
+	@echo "----------------------------------"
+	@echo "GPU Managed Memory + Copy-to-Host:"
+	@echo "----------------------------------"
+	MPICH_GPU_SUPPORT_ENABLED=1 MPICH_GPU_MANAGED_MEMORY_SUPPORT_ENABLED=1 mpiexec -n 2 $(MPI_ARGS) ./hello_world_mpi_cuda -m -c && echo "Success" || echo "Failed"
+	@echo && echo && echo
 
 run_GPUd: hello_world_mpi_cuda
+	@echo "------------------"
 	@echo "GPU Device Memory:"
-	@mpiexec -n 2 $(MPI_ARGS) ./hello_world_mpi_cuda -d && echo "Success" || echo "Failed"
+	@echo "------------------"
+	MPICH_GPU_SUPPORT_ENABLED=1 mpiexec -n 2 $(MPI_ARGS) ./hello_world_mpi_cuda -d && echo "Success" || echo "Failed"
+	@echo && echo && echo
+
+run_GPUdc: hello_world_mpi_cuda
+	@echo "---------------------------------"
+	@echo "GPU Device Memory + Copy-to-Host:"
+	@echo "---------------------------------"
+	MPICH_GPU_SUPPORT_ENABLED=1 mpiexec -n 2 $(MPI_ARGS) ./hello_world_mpi_cuda -d -c && echo "Success" || echo "Failed"
+	@echo && echo && echo
 
 run:
 	$(MAKE) run_CPU
 	$(MAKE) run_GPUm
 	$(MAKE) run_GPUd
+	$(MAKE) run_GPUmc
+	$(MAKE) run_GPUdc
 
 clean:
 	rm -f *~ hello_world_mpi_cuda hello_world_mpi_cpu *.o core

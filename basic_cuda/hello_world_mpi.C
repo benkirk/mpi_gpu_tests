@@ -14,11 +14,17 @@
 enum MemType { CPU=0, GPU_Device, GPU_Managed };
 
 
+// anonymous namespace to hold "global" variables, but restricted to this translation unit
+namespace {
+  int rank, nranks, local_rank;
+  char hn[256];
+}
+
+
 
 // https://www.open-mpi.org/faq/?category=runcuda
 void select_cuda_device()
 {
-  int rank=0, local_rank = -1;
   {
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm local_comm;
@@ -35,41 +41,44 @@ void select_cuda_device()
 
 
 
-int* allocate(const std::size_t size, const MemType mem_type)
+int* allocate(const std::size_t cnt, const MemType mem_type)
 {
   int* buffer = NULL;
 
   switch (mem_type)
     {
     case CPU:
-      buffer = (int *) malloc(size*sizeof(int));
+      buffer = (int *) malloc(cnt*sizeof(int));
       assert (NULL != buffer);
-      std::cout << "Successfully allocated "
-		<< size*sizeof(int)
+      std::cout << "Rank " << std::setw(3) << rank
+                << " successfully allocated "
+		<< cnt*sizeof(int)
 		<< " bytes of CPU memory\n";
-      for (int i=0; i<size; ++i)
+      for (int i=0; i<cnt; ++i)
         buffer[i] = i;
-      for (int i=0; i<std::min(size,static_cast<std::size_t>(10)); ++i) {
-        if (i < 9) std::cout << buffer[i] << " ";
-        else       std::cout << "...\n";
-      }
+      // for (int i=0; i<std::min(cnt,static_cast<std::size_t>(10)); ++i) {
+      //   if (i < 9) std::cout << buffer[i] << " ";
+      //   else       std::cout << "...\n";
+      // }
       return buffer;
 
 #ifdef HAVE_CUDA
     case GPU_Device:
-      CUDA_CHECK(cudaMalloc((void**) &buffer, size*sizeof(int)));
-      std::cout << "Successfully allocated "
-		<< size*sizeof(int)
+      CUDA_CHECK(cudaMalloc((void**) &buffer, cnt*sizeof(int)));
+      std::cout << "Rank " << std::setw(3) << rank
+                << " successfully allocated "
+		<< cnt*sizeof(int)
 		<< " bytes of GPU memory\n";
-      fillprintCUDAbuf (buffer, size);
+      fillprintCUDAbuf (buffer, cnt);
       return buffer;
 
     case GPU_Managed:
-      CUDA_CHECK(cudaMallocManaged((void**) &buffer, size*sizeof(int)));
-      std::cout << "Successfully allocated "
-		<< size*sizeof(int)
+      CUDA_CHECK(cudaMallocManaged((void**) &buffer, cnt*sizeof(int)));
+      std::cout << "Rank " << std::setw(3) << rank
+                << " successfully allocated "
+		<< cnt*sizeof(int)
 		<< " bytes of managed GPU memory\n";
-      fillprintCUDAbuf (buffer, size);
+      fillprintCUDAbuf (buffer, cnt);
       return buffer;
 #endif // #ifdef HAVE_CUDA
 
@@ -114,11 +123,10 @@ int deallocate (int *buffer, const MemType mem_type)
 
 
 
-int* copy_dev_to_host (const std::size_t size, int *dev, int *host)
+int* copy_dev_to_host (const std::size_t cnt, int *dev, int *host)
 {
-  // TODO
 #ifdef HAVE_CUDA
-  CUDA_CHECK(cudaMemcpy(host, dev, sizeof(int)*size, cudaMemcpyDeviceToHost));
+  CUDA_CHECK(cudaMemcpy(host, dev, sizeof(int)*cnt, cudaMemcpyDeviceToHost));
 #else
   assert(false);
 #endif
@@ -128,11 +136,10 @@ int* copy_dev_to_host (const std::size_t size, int *dev, int *host)
 
 
 
-int* copy_host_to_dev (const std::size_t size, int *host, int *dev)
+int* copy_host_to_dev (const std::size_t cnt, int *host, int *dev)
 {
-  // TODO
 #ifdef HAVE_CUDA
-  CUDA_CHECK(cudaMemcpy(dev, host, sizeof(int)*size, cudaMemcpyHostToDevice));
+  CUDA_CHECK(cudaMemcpy(dev, host, sizeof(int)*cnt, cudaMemcpyHostToDevice));
 #else
   assert(false);
 #endif
@@ -144,13 +151,14 @@ int* copy_host_to_dev (const std::size_t size, int *host, int *dev)
 
 int main (int argc, char **argv)
 {
-  int nranks, rank, opt;
-  const std::size_t bufsize = 1000;
+  int opt;
+  const std::size_t bufcnt_MAX = 1e9;
   int *buf = NULL;
   int *hbuf = NULL;
   MemType mem_type = CPU;
+  bool copy_to_host = false;
 
-  while((opt = getopt(argc, argv, ":dm")) != -1)
+  while((opt = getopt(argc, argv, ":dmc")) != -1)
     {
       switch(opt)
         {
@@ -162,11 +170,17 @@ int main (int argc, char **argv)
 	  mem_type = GPU_Managed;
 	  break;
 
+	case 'c':
+	  copy_to_host = true;
+	  break;
+
 	case '?':
 	  printf("unknown option: %c\n", opt);
 	  break;
         }
     }
+
+  gethostname(hn, sizeof(hn) / sizeof(char));
 
   MPI_Init(&argc, &argv);
   MPI_Comm_size (MPI_COMM_WORLD, &nranks);
@@ -180,6 +194,7 @@ int main (int argc, char **argv)
     }
 
   std::cout << "Hello from " << std::setw(3) << rank
+            << " / " << std::string (hn)
 	    << ", running " << argv[0] << " on "
 	    << std::setw(3) << nranks << " rank(s)"
 	    << std::endl;
@@ -188,15 +203,58 @@ int main (int argc, char **argv)
   select_cuda_device();
 
   //--------------------
-  buf = allocate(bufsize, mem_type);
+  buf = allocate(bufcnt_MAX, mem_type);
+  if (copy_to_host) hbuf = allocate(bufcnt_MAX, CPU);
 
-  if (rank%2 == 0) // even ranks send...
-    MPI_Send (buf, bufsize, MPI_INT, /* dest = */ (rank + 1) % nranks, /* tag = */ 100, MPI_COMM_WORLD);
 
-  else // odd ranks recv
-    MPI_Recv (buf, bufsize, MPI_INT, /* src = */ (rank - 1), /* tag = */ 100, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
-  deallocate(buf, mem_type);
+  std::vector<std::size_t> cnts{1};
+  while (cnts.back() < bufcnt_MAX)
+    cnts.push_back(10*cnts.back());
+
+  MPI_Barrier(MPI_COMM_WORLD);
+
+  for (auto & bufcnt : cnts)
+    {
+      if (bufcnt >= bufcnt_MAX) break;
+
+      const double t_start = MPI_Wtime();
+
+      if (rank%2 == 0) // even ranks send...
+        {
+          // send directy from'buf, wherever it lies...
+          if (!copy_to_host)
+            MPI_Send (buf, bufcnt, MPI_INT, /* dest = */ (rank + 1) % nranks, /* tag = */ 100, MPI_COMM_WORLD);
+
+          else
+            {
+              if (mem_type != CPU) copy_dev_to_host (bufcnt, buf, hbuf);
+              MPI_Send (hbuf, bufcnt, MPI_INT, /* dest = */ (rank + 1) % nranks, /* tag = */ 100, MPI_COMM_WORLD);
+            }
+        }
+
+      else // odd ranks recv
+        {
+          // recv directy from'buf' ; wherever it lies...
+          if (!copy_to_host)
+            MPI_Recv (buf, bufcnt, MPI_INT, /* src = */ (rank - 1), /* tag = */ 100, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+          else
+            {
+              MPI_Recv (hbuf, bufcnt, MPI_INT, /* src = */ (rank - 1), /* tag = */ 100, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+              if (mem_type != CPU) copy_host_to_dev (bufcnt, hbuf, buf);
+            }
+        }
+
+      const double elapsed = MPI_Wtime() - t_start;
+      if (rank == 0)
+        std::cout << std::setw(10) << bufcnt << " : "
+                  << elapsed << " (sec)"
+                  << std::endl;
+    }
+
+  deallocate(buf,  mem_type);
+  deallocate(hbuf, CPU);
 
   MPI_Finalize();
 
