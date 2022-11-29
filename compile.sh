@@ -93,7 +93,7 @@ env | sort | uniq | egrep -v "_LM|_ModuleTable"
 
 cd ${src_dir} && rm -rf BUILD && mkdir BUILD && cd BUILD || exit 1
 
-CXX=$(which mpicxx) CC=$(which mpicc) FC=$(which mpif90) F77=${FC} \
+CXX=$(which CC) CC=$(which cc) FC=$(which ftn) F77=${FC} \
    ../configure --enable-cuda --prefix=${inst_dir} \
     || exit 1
 
