@@ -9,12 +9,16 @@
 user_args=( "$@" )
 
 ncar_stack=no
+custom_stack=no
 while [[ $# -gt 0 ]]; do
     key="$1"
 
     case $key in
         --ncar-stack)
             ncar_stack=yes
+            ;;
+        --custom-stack)
+            custom_stack=yes
             ;;
         *)
             ;;
@@ -31,9 +35,21 @@ EOF
 if [[ ${ncar_stack} == "yes" ]]; then
     cat >>config_env.sh <<EOF
 module reset
-module load gcc/11.2.0 openmpi cuda
+module load gcc/11.2.0 cuda
 module list
 export BUILD_CLASS="ncarenv" && echo "CC: \$(which CC)"
+EOF
+
+# build using custom env
+elif [[ ${custom_stack} == "yes" ]]; then
+    cat >>config_env.sh <<EOF
+module load cuda
+module load nvhpc/22.7
+module load cray-mpich
+module load cray-libsci
+module load ncarcompilers
+module list
+export BUILD_CLASS="custom" && echo "CC: \$(which CC)"
 EOF
 
 # build using crayenv
@@ -59,6 +75,9 @@ done
 
 # Enable verbose MPI settings
 export MPICH_ENV_DISPLAY=1
+
+# Enable verbose output during MPI_Init to verify which libfabric provider has been selected
+export MPICH_OFI_VERBOSE=1
 
 # Enable GPU support in the MPI library
 export MPICH_GPU_SUPPORT_ENABLED=1
