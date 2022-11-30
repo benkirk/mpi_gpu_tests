@@ -9,16 +9,20 @@ module reset >/dev/null 2>&1
 module load cuda >/dev/null 2>&1
 module list
 
-# Enable verbose MPI settings
-export MPICH_ENV_DISPLAY=1
+# verbose MPI settings?
+export MPICH_ENV_DISPLAY=0
 
-# Enable verbose output during MPI_Init to verify which libfabric provider has been selected
-export MPICH_OFI_VERBOSE=1
+# verbose output during MPI_Init to verify which libfabric provider has been selected?
+export MPICH_OFI_VERBOSE=0
 
 # Enable GPU support in the MPI library
 export MPICH_GPU_SUPPORT_ENABLED=1
 export MPICH_GPU_MANAGED_MEMORY_SUPPORT_ENABLED=1
-export MPI_ARGS="--ppn 1"
+
+# use MPI local rank internally to set the CUDA device, not anything from the environment
+unset CUDA_VISIBLE_DEVICES
+
+export MPI_ARGS="-n 2 --ppn 1"
 
 # default compiler
 make --no-print-directory clean

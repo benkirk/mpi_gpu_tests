@@ -17,35 +17,35 @@ run_CPU: hello_world_mpi_cpu
 	@echo "------------------"
 	@echo "CPU Memory:"
 	@echo "------------------"
-	mpiexec -n 2 $(MPI_ARGS) ./hello_world_mpi_cpu && echo "Success" || echo "Failed"
+	mpiexec $(MPI_ARGS) ./hello_world_mpi_cpu && echo "Success" || echo "Failed"
 	@echo && echo && echo
 
 run_GPUm: hello_world_mpi_cuda
 	@echo "------------------"
 	@echo "GPU Managed Memory:"
 	@echo "------------------"
-	MPICH_GPU_SUPPORT_ENABLED=1 MPICH_GPU_MANAGED_MEMORY_SUPPORT_ENABLED=1 mpiexec -n 2 $(MPI_ARGS) ./hello_world_mpi_cuda -m && echo "Success" || echo "Failed"
+	mpiexec $(MPI_ARGS) ./hello_world_mpi_cuda -m && echo "Success" || echo "Failed"
 	@echo && echo && echo
 
 run_GPUmc: hello_world_mpi_cuda
 	@echo "----------------------------------"
 	@echo "GPU Managed Memory + Copy-to-Host:"
 	@echo "----------------------------------"
-	MPICH_GPU_SUPPORT_ENABLED=1 MPICH_GPU_MANAGED_MEMORY_SUPPORT_ENABLED=1 mpiexec -n 2 $(MPI_ARGS) ./hello_world_mpi_cuda -m -c && echo "Success" || echo "Failed"
+	mpiexec $(MPI_ARGS) ./hello_world_mpi_cuda -m -c && echo "Success" || echo "Failed"
 	@echo && echo && echo
 
 run_GPUd: hello_world_mpi_cuda
 	@echo "------------------"
 	@echo "GPU Device Memory:"
 	@echo "------------------"
-	MPICH_GPU_SUPPORT_ENABLED=1 mpiexec -n 2 $(MPI_ARGS) ./hello_world_mpi_cuda -d && echo "Success" || echo "Failed"
+	mpiexec $(MPI_ARGS) ./hello_world_mpi_cuda -d && echo "Success" || echo "Failed"
 	@echo && echo && echo
 
 run_GPUdc: hello_world_mpi_cuda
 	@echo "---------------------------------"
 	@echo "GPU Device Memory + Copy-to-Host:"
 	@echo "---------------------------------"
-	MPICH_GPU_SUPPORT_ENABLED=1 mpiexec -n 2 $(MPI_ARGS) ./hello_world_mpi_cuda -d -c && echo "Success" || echo "Failed"
+	mpiexec $(MPI_ARGS) ./hello_world_mpi_cuda -d -c && echo "Success" || echo "Failed"
 	@echo && echo && echo
 
 run:
