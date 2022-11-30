@@ -25,36 +25,27 @@ unset CUDA_VISIBLE_DEVICES
 export MPI_ARGS="-n 2 --ppn 1"
 
 # default compiler
-make --no-print-directory clean
-make --no-print-directory
-make --no-print-directory run
+make --no-print-directory clean all run
 
 #exit 0
 
 # gcc
 module load gcc/11.2.0 >/dev/null 2>&1
 module list
-
-make --no-print-directory clean
-make --no-print-directory
-make --no-print-directory run
+make --no-print-directory clean all run
 
 
 
 # nvhpc
 module load nvhpc >/dev/null 2>&1
 module list
-
-make --no-print-directory clean
-make --no-print-directory
-make --no-print-directory run
+make --no-print-directory clean all run
 
 
 
 # oneapi
 module load oneapi >/dev/null 2>&1
 module list
+make --no-print-directory clean all run
 
-make --no-print-directory clean
-make --no-print-directory
-make --no-print-directory run
+echo "Done at $(date)"

@@ -3,6 +3,7 @@
 #include <cassert>
 #include <cstdio>
 #include <vector>
+#include <limits>
 #include <unistd.h>
 #include "mpi.h"
 #ifdef HAVE_CUDA
@@ -44,6 +45,7 @@ void select_cuda_device()
 int* allocate(const std::size_t cnt, const MemType mem_type)
 {
   int* buffer = NULL;
+  if (0 == cnt) return buffer;
 
   switch (mem_type)
     {
@@ -125,6 +127,8 @@ int deallocate (int *buffer, const MemType mem_type)
 
 int* copy_dev_to_host (const std::size_t cnt, int *dev, int *host)
 {
+  if (0 == cnt) return host;
+
 #ifdef HAVE_CUDA
   CUDA_CHECK(cudaMemcpy(host, dev, sizeof(int)*cnt, cudaMemcpyDeviceToHost));
 #else
@@ -138,6 +142,8 @@ int* copy_dev_to_host (const std::size_t cnt, int *dev, int *host)
 
 int* copy_host_to_dev (const std::size_t cnt, int *host, int *dev)
 {
+  if (0 == dev) return host;
+
 #ifdef HAVE_CUDA
   CUDA_CHECK(cudaMemcpy(dev, host, sizeof(int)*cnt, cudaMemcpyHostToDevice));
 #else
@@ -152,7 +158,7 @@ int* copy_host_to_dev (const std::size_t cnt, int *host, int *dev)
 int main (int argc, char **argv)
 {
   int opt;
-  const std::size_t bufcnt_MAX = 1e10;
+  const std::size_t bufcnt_MAX = std::numeric_limits<int>::max() - 10; // MPI uses plain old ints for buffer counts...
   int *buf = NULL;
   int *hbuf = NULL;
   MemType mem_type = CPU;
@@ -180,6 +186,8 @@ int main (int argc, char **argv)
         }
     }
 
+  if (copy_to_host) assert(CPU != mem_type);
+
   gethostname(hn, sizeof(hn) / sizeof(char));
 
   MPI_Init(&argc, &argv);
@@ -188,7 +196,7 @@ int main (int argc, char **argv)
 
   if (nranks%2)
     {
-      std::cerr << "ERROR: this requires exactly even number of ranks!\n";
+      std::cerr << "ERROR: this requires an even number of ranks!\n";
       MPI_Abort(MPI_COMM_WORLD, 1);
       assert(false);
     }
@@ -196,7 +204,7 @@ int main (int argc, char **argv)
   std::cout << "Hello from " << std::setw(3) << rank
             << " / " << std::string (hn)
 	    << ", running " << argv[0] << " on "
-	    << std::setw(3) << nranks << " rank(s)"
+	    << std::setw(3) << nranks << " ranks"
 	    << std::endl;
 
   select_cuda_device();
@@ -214,51 +222,53 @@ int main (int argc, char **argv)
 	case GPU_Managed:
 	  std::cout << "Allocating GPU device *managed* memory for \"buf\"\n";
 	}
-      
+
       if (copy_to_host)
 	std::cout << "Performing dev->host copy before send / host->dev copy after recv\n";
     }
-  
-  
-  std::vector<std::size_t> cnts{1};
+
+
+  std::vector<std::size_t> cnts{0,1};
   while (cnts.back() < bufcnt_MAX)
-    cnts.push_back(10*cnts.back());
+    {
+      const std::size_t b = cnts.back();
+      cnts.push_back( 3*b);
+      cnts.push_back(10*b);
+    }
+  while (cnts.back() > bufcnt_MAX) cnts.pop_back();
+  cnts.push_back(bufcnt_MAX);
 
   MPI_Barrier(MPI_COMM_WORLD);
 
   for (auto & bufcnt : cnts)
     {
-      if (bufcnt >= bufcnt_MAX) break;
-
       //--------------------
       buf = allocate(bufcnt, mem_type);
       if (copy_to_host) hbuf = allocate(bufcnt, CPU);
 
       const double t_start = MPI_Wtime();
 
-      if (rank%2 == 0) // even ranks send...
+      if (rank%2 == 0) // even ranks send... Use 'Ssend' so our timing includes the matching receive.
         {
-          // send directy from'buf, wherever it lies...
-          if (!copy_to_host)
-            MPI_Send (buf, bufcnt, MPI_INT, /* dest = */ (rank + 1) % nranks, /* tag = */ 100, MPI_COMM_WORLD);
+          if (!copy_to_host) // send directly from'buf, wherever it lies...
+            MPI_Ssend (buf, bufcnt, MPI_INT, /* dest = */ (rank + 1) % nranks, /* tag = */ 100, MPI_COMM_WORLD);
 
-          else
+          else // if we are using any type of GPU memory, don't send from there.  instead copy to a host buffer.
             {
-              if (mem_type != CPU) copy_dev_to_host (bufcnt, buf, hbuf);
-              MPI_Send (hbuf, bufcnt, MPI_INT, /* dest = */ (rank + 1) % nranks, /* tag = */ 100, MPI_COMM_WORLD);
+              copy_dev_to_host (bufcnt, buf, hbuf);
+              MPI_Ssend (hbuf, bufcnt, MPI_INT, /* dest = */ (rank + 1) % nranks, /* tag = */ 100, MPI_COMM_WORLD);
             }
         }
 
       else // odd ranks recv
         {
-          // recv directy from'buf' ; wherever it lies...
-          if (!copy_to_host)
+          if (!copy_to_host) // recv directly from'buf' ; wherever it lies...
             MPI_Recv (buf, bufcnt, MPI_INT, /* src = */ (rank - 1), /* tag = */ 100, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
-          else
+          else // if we are using any type of GPU memory, don't send from there.  instead copy to a host buffer.
             {
               MPI_Recv (hbuf, bufcnt, MPI_INT, /* src = */ (rank - 1), /* tag = */ 100, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-              if (mem_type != CPU) copy_host_to_dev (bufcnt, hbuf, buf);
+              copy_host_to_dev (bufcnt, hbuf, buf);
             }
         }
 

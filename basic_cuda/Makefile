@@ -6,7 +6,7 @@ hello_world_mpi_cuda: hello_world_mpi_cuda.o fillprint.o
 hello_world_mpi_cuda.o: hello_world_mpi.C
 	mpicxx -g -c -DHAVE_CUDA -o hello_world_mpi_cuda.o hello_world_mpi.C
 
-# no-CUDA variant
+# no-CUDA / CPU only variant
 hello_world_mpi_cpu: hello_world_mpi.C
 	mpicxx -g -o hello_world_mpi_cpu hello_world_mpi.C
 
@@ -57,3 +57,7 @@ run:
 
 clean:
 	rm -f *~ hello_world_mpi_cuda hello_world_mpi_cpu *.o core
+
+clobber:
+	$(MAKE) clean
+	rm -f run*.sh.o*
