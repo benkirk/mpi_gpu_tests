@@ -17,43 +17,43 @@ run_CPU: hello_world_mpi_cpu
 	@echo "------------------"
 	@echo "CPU Memory:"
 	@echo "------------------"
-	mpiexec $(MPI_ARGS) ./hello_world_mpi_cpu && echo "Success" || echo "Failed"
-	@echo && echo && echo
-
-run_GPUm: hello_world_mpi_cuda
-	@echo "------------------"
-	@echo "GPU Managed Memory:"
-	@echo "------------------"
-	mpiexec $(MPI_ARGS) ./hello_world_mpi_cuda -m && echo "Success" || echo "Failed"
-	@echo && echo && echo
-
-run_GPUmc: hello_world_mpi_cuda
-	@echo "----------------------------------"
-	@echo "GPU Managed Memory + Copy-to-Host:"
-	@echo "----------------------------------"
-	mpiexec $(MPI_ARGS) ./hello_world_mpi_cuda -m -c && echo "Success" || echo "Failed"
+	mpiexec $(MPI_ARGS) ./hello_world_mpi_cpu || echo "Failed"
 	@echo && echo && echo
 
 run_GPUd: hello_world_mpi_cuda
 	@echo "------------------"
 	@echo "GPU Device Memory:"
 	@echo "------------------"
-	mpiexec $(MPI_ARGS) ./hello_world_mpi_cuda -d && echo "Success" || echo "Failed"
+	mpiexec $(MPI_ARGS) ./hello_world_mpi_cuda -d || echo "Failed"
+	@echo && echo && echo
+
+run_GPUm: hello_world_mpi_cuda
+	@echo "------------------"
+	@echo "GPU Managed Memory:"
+	@echo "------------------"
+	mpiexec $(MPI_ARGS) ./hello_world_mpi_cuda -m || echo "Failed"
 	@echo && echo && echo
 
 run_GPUdc: hello_world_mpi_cuda
 	@echo "---------------------------------"
 	@echo "GPU Device Memory + Copy-to-Host:"
 	@echo "---------------------------------"
-	mpiexec $(MPI_ARGS) ./hello_world_mpi_cuda -d -c && echo "Success" || echo "Failed"
+	mpiexec $(MPI_ARGS) ./hello_world_mpi_cuda -d -c || echo "Failed"
+	@echo && echo && echo
+
+run_GPUmc: hello_world_mpi_cuda
+	@echo "----------------------------------"
+	@echo "GPU Managed Memory + Copy-to-Host:"
+	@echo "----------------------------------"
+	mpiexec $(MPI_ARGS) ./hello_world_mpi_cuda -m -c || echo "Failed"
 	@echo && echo && echo
 
 run:
 	$(MAKE) run_CPU
-	$(MAKE) run_GPUm
 	$(MAKE) run_GPUd
-	$(MAKE) run_GPUmc
+	$(MAKE) run_GPUm
 	$(MAKE) run_GPUdc
+	$(MAKE) run_GPUmc
 
 clean:
 	rm -f *~ hello_world_mpi_cuda hello_world_mpi_cpu *.o core

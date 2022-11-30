@@ -214,6 +214,9 @@ int main (int argc, char **argv)
 	case GPU_Managed:
 	  std::cout << "Allocating GPU device *managed* memory for \"buf\"\n";
 	}
+      
+      if (copy_to_host)
+	std::cout << "Performing dev->host copy before send / host->dev copy after recv\n";
     }
   
   
