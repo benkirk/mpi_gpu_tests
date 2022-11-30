@@ -3,7 +3,7 @@
 #PBS -A SCSG0001
 #PBS -j oe
 #PBS -l walltime=00:30:00
-#PBS -l select=2:ncpus=4:ngpus=2:mem=10G 
+#PBS -l select=2:ncpus=4:ngpus=2:mem=40G
 #PBS -l gpu_type=v100
 
 module reset >/dev/null 2>&1

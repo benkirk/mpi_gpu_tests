@@ -50,10 +50,10 @@ int* allocate(const std::size_t cnt, const MemType mem_type)
     case CPU:
       buffer = (int *) malloc(cnt*sizeof(int));
       assert (NULL != buffer);
-      std::cout << "Rank " << std::setw(3) << rank
-                << " successfully allocated "
-		<< cnt*sizeof(int)
-		<< " bytes of CPU memory\n";
+      // std::cout << "Rank " << std::setw(3) << rank
+      //           << " successfully allocated "
+      // 		<< cnt*sizeof(int)
+      // 		<< " bytes of CPU memory\n";
       for (int i=0; i<cnt; ++i)
         buffer[i] = i;
       // for (int i=0; i<std::min(cnt,static_cast<std::size_t>(10)); ++i) {
@@ -65,19 +65,19 @@ int* allocate(const std::size_t cnt, const MemType mem_type)
 #ifdef HAVE_CUDA
     case GPU_Device:
       CUDA_CHECK(cudaMalloc((void**) &buffer, cnt*sizeof(int)));
-      std::cout << "Rank " << std::setw(3) << rank
-                << " successfully allocated "
-		<< cnt*sizeof(int)
-		<< " bytes of GPU memory\n";
+      // std::cout << "Rank " << std::setw(3) << rank
+      //           << " successfully allocated "
+      // 		<< cnt*sizeof(int)
+      // 		<< " bytes of GPU memory\n";
       fillprintCUDAbuf (buffer, cnt);
       return buffer;
 
     case GPU_Managed:
       CUDA_CHECK(cudaMallocManaged((void**) &buffer, cnt*sizeof(int)));
-      std::cout << "Rank " << std::setw(3) << rank
-                << " successfully allocated "
-		<< cnt*sizeof(int)
-		<< " bytes of managed GPU memory\n";
+      // std::cout << "Rank " << std::setw(3) << rank
+      //           << " successfully allocated "
+      // 		<< cnt*sizeof(int)
+      // 		<< " bytes of managed GPU memory\n";
       fillprintCUDAbuf (buffer, cnt);
       return buffer;
 #endif // #ifdef HAVE_CUDA
@@ -152,7 +152,7 @@ int* copy_host_to_dev (const std::size_t cnt, int *host, int *dev)
 int main (int argc, char **argv)
 {
   int opt;
-  const std::size_t bufcnt_MAX = 1e9;
+  const std::size_t bufcnt_MAX = 1e10;
   int *buf = NULL;
   int *hbuf = NULL;
   MemType mem_type = CPU;
@@ -199,15 +199,24 @@ int main (int argc, char **argv)
 	    << std::setw(3) << nranks << " rank(s)"
 	    << std::endl;
 
-
   select_cuda_device();
 
-  //--------------------
-  buf = allocate(bufcnt_MAX, mem_type);
-  if (copy_to_host) hbuf = allocate(bufcnt_MAX, CPU);
-
-
-
+  if (rank==0)
+    {
+      switch (mem_type)
+	{
+	case CPU:
+	  std::cout << "Allocating CPU host memory for \"buf\"\n";
+	  break;
+	case GPU_Device:
+	  std::cout << "Allocating GPU device memory for \"buf\"\n";
+	  break;
+	case GPU_Managed:
+	  std::cout << "Allocating GPU device *managed* memory for \"buf\"\n";
+	}
+    }
+  
+  
   std::vector<std::size_t> cnts{1};
   while (cnts.back() < bufcnt_MAX)
     cnts.push_back(10*cnts.back());
@@ -217,6 +226,10 @@ int main (int argc, char **argv)
   for (auto & bufcnt : cnts)
     {
       if (bufcnt >= bufcnt_MAX) break;
+
+      //--------------------
+      buf = allocate(bufcnt, mem_type);
+      if (copy_to_host) hbuf = allocate(bufcnt, CPU);
 
       const double t_start = MPI_Wtime();
 
@@ -251,10 +264,11 @@ int main (int argc, char **argv)
         std::cout << std::setw(10) << bufcnt << " : "
                   << elapsed << " (sec)"
                   << std::endl;
+
+      deallocate(buf,  mem_type);
+      deallocate(hbuf, CPU);
     }
 
-  deallocate(buf,  mem_type);
-  deallocate(hbuf, CPU);
 
   MPI_Finalize();
 
