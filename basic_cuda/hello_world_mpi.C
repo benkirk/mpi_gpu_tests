@@ -265,7 +265,7 @@ int main (int argc, char **argv)
       const double elapsed = MPI_Wtime() - t_start;
       if (rank == 0)
         std::cout << std::setw(10) << bufcnt << " : "
-                  << elapsed << " (sec)"
+                  << std::scientific << elapsed << " (sec)"
                   << std::endl;
 
       deallocate(buf,  mem_type);
