@@ -1,14 +1,14 @@
 all: hello_world_mpi_cpu hello_world_mpi_cuda
 
 hello_world_mpi_cuda: hello_world_mpi_cuda.o fillprint.o
-	mpicxx -g -o hello_world_mpi_cuda hello_world_mpi_cuda.o fillprint.o -lcuda -lcudart
+	mpicxx $(CXXFLAGS) -g -o hello_world_mpi_cuda hello_world_mpi_cuda.o fillprint.o $(LDFLAGS) -lcuda -lcudart
 
 hello_world_mpi_cuda.o: hello_world_mpi.C
-	mpicxx -g -c -DHAVE_CUDA -o hello_world_mpi_cuda.o hello_world_mpi.C
+	mpicxx $(CXXFLAGS) -g -c -DHAVE_CUDA -o hello_world_mpi_cuda.o hello_world_mpi.C
 
 # no-CUDA / CPU only variant
 hello_world_mpi_cpu: hello_world_mpi.C
-	mpicxx -g -o hello_world_mpi_cpu hello_world_mpi.C
+	mpicxx $(CXXFLAGS) -g -o hello_world_mpi_cpu hello_world_mpi.C
 
 fillprint.o: fillprint.cu
 	nvcc -c fillprint.cu

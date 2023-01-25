@@ -17,7 +17,7 @@ enum MemType { CPU=0, GPU_Device, GPU_Managed };
 
 // anonymous namespace to hold "global" variables, but restricted to this translation unit
 namespace {
-  int rank, nranks, local_rank;
+  int rank=-1, nranks=-1;
   char hn[256];
 }
 
@@ -26,17 +26,20 @@ namespace {
 // https://www.open-mpi.org/faq/?category=runcuda
 void select_cuda_device()
 {
-  {
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MPI_Comm local_comm;
-    MPI_Comm_split_type(MPI_COMM_WORLD, MPI_COMM_TYPE_SHARED, rank, MPI_INFO_NULL, &local_comm);
-    MPI_Comm_rank(local_comm, &local_rank);
-    MPI_Comm_free(&local_comm);
-  }
 #ifdef HAVE_CUDA
-  int num_devices = 0;
-  cudaGetDeviceCount(&num_devices);
-  cudaSetDevice(local_rank % num_devices);
+  int num_devices = 0, local_rank = -1;
+
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm local_comm;
+  MPI_Comm_split_type(MPI_COMM_WORLD, MPI_COMM_TYPE_SHARED, rank, MPI_INFO_NULL, &local_comm);
+  MPI_Comm_rank(local_comm, &local_rank);
+  MPI_Comm_free(&local_comm);
+
+  if (0 != num_devices)
+    {
+      cudaGetDeviceCount(&num_devices);
+      cudaSetDevice(local_rank % num_devices);
+    }
 #endif // #ifdef HAVE_CUDA
 }
 
@@ -248,15 +251,15 @@ int main (int argc, char **argv)
 
       const double t_start = MPI_Wtime();
 
-      if (rank%2 == 0) // even ranks send... Use 'Ssend' so our timing includes the matching receive.
+      if (rank%2 == 0) // even ranks send... Use 'Ssend' if you want our timing includes the matching receive.
         {
           if (!copy_to_host) // send directly from'buf, wherever it lies...
-            MPI_Ssend (buf, bufcnt, MPI_INT, /* dest = */ (rank + 1) % nranks, /* tag = */ 100, MPI_COMM_WORLD);
+            MPI_Send (buf, bufcnt, MPI_INT, /* dest = */ (rank + 1) % nranks, /* tag = */ 100, MPI_COMM_WORLD);
 
           else // if we are using any type of GPU memory, don't send from there.  instead copy to a host buffer.
             {
               copy_dev_to_host (bufcnt, buf, hbuf);
-              MPI_Ssend (hbuf, bufcnt, MPI_INT, /* dest = */ (rank + 1) % nranks, /* tag = */ 100, MPI_COMM_WORLD);
+              MPI_Send (hbuf, bufcnt, MPI_INT, /* dest = */ (rank + 1) % nranks, /* tag = */ 100, MPI_COMM_WORLD);
             }
         }
 
